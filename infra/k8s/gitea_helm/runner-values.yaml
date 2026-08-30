@@ -1,0 +1,96 @@
+enabled: true
+existingSecret: runner-secret
+existingSecretKey: token
+
+giteaRootURL: http://gitea-http.gitea.svc.cluster.local:3000
+
+statefulset:
+  replicas: 1
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: runner
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  securityContext: {}
+  serviceAccountName: ""
+  runtimeClassName: ""
+  persistence:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+
+runner:
+  registry: "docker.gitea.com"
+  repository: runner
+  tag: 2.0.1
+  digest: ""
+  pullPolicy: IfNotPresent
+  fullOverride: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  extraVolumeMounts: []
+  extraEnvs:
+    - name: "GITEA_RUNNER_NAME"
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+  config: |
+      log:
+        level: info
+      cache:
+        enabled: false
+      container:
+        require_docker: true
+        docker_timeout: 300s
+
+dind:
+  rootless: false
+  uid: ""
+  registry: docker.io
+  repository: docker
+  tag: 29.5.2-dind
+  digest: ""
+  pullPolicy: IfNotPresent
+  fullOverride: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    extraVolumeMounts: []
+    extraEnvs: []
+    extraArgs: []
+
+init:
+  image:
+    registry: ""
+    repository: busybox
+    tag: "1.38.0"
+    digest: ""
+    pullPolicy: IfNotPresent
+    fullOverride: ""
+
+  connectionCommandOverride: ""
+  preConnectionCommandOverride: ""
+
+preExtraInitContainers: []
+postExtraInitContainers: []
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""

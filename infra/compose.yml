@@ -1,0 +1,116 @@
+volumes:
+  gitea:
+    driver: local
+  drone:
+    driver: local
+  giteapostgres:
+    driver: local
+  dronepostgres:
+    driver: local
+
+networks:
+  frontend:
+    driver: bridge
+
+  backend:
+    driver: bridge
+
+services:
+  gitea:
+    image: docker.gitea.com/gitea:1.27.2
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=giteadb:6432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea
+      - GITEA__server__DOMAIN=git.dev.local
+      - GITEA__server__ROOT_URL=https://git.dev.local/
+      - GITEA__server__DISABLE_SSH=false
+      - GITEA__server__SSH_DOMAIN=git.dev.local
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__server__SSH_LISTEN_PORT=22
+      - GITEA__server__HTTP_PORT=3000
+      - GITEA__service__DISABLE_REGISTRATION=false
+      - GITEA__service__REQUIRE_SIGNIN_VIEW=false
+      - GITEA__service__REGISTER_EMAIL_CONFIRM=false
+      - GITEA__service__ENABLE_NOTIFY_MAIL=false
+      - GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION=false
+      - GITEA__service__ENABLE_CAPTCHA=false
+      - GITEA__service__DEFAULT_KEEP_EMAIL_PRIVATE=false
+      - GITEA__service__DEFAULT_ALLOW_CREATE_ORGANIZATION=true
+      - GITEA__service__DEFAULT_ENABLE_TIMETRACKING=true
+      - GITEA__service__NO_REPLY_ADDRESS=noreply.localhost
+      - GITEA__service__DEFAULT_USER_IS_RESTRICTED=true
+    restart: unless-stopped
+    ports:
+      - "2222:22"
+      - "3000:3000"
+    volumes:
+      - gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - giteadb
+    networks:
+      - frontend
+      - backend
+
+  giteadb:
+    image: docker.io/library/postgres:14
+    restart: always
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=gitea
+      - POSTGRES_DB=gitea
+      - PGPORT=6432
+    volumes:
+      - giteapostgres:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  drone:
+    image: drone/drone:latest
+    container_name: drone
+    restart: unless-stopped
+    extra_hosts:
+      - "git.dev.local:192.168.3.247"
+      - "drone.dev.local:192.168.3.247"
+    environment:
+      - DRONE_DATABASE_DRIVER=postgres
+      - DRONE_DATABASE_DATASOURCE=postgres://drone:drone@dronedb:7432/drone?sslmode=disable
+      - DRONE_GITEA_SERVER=https://git.dev.local/
+      - DRONE_GITEA_CLIENT_ID=0fd53693-5319-4850-91ca-61a7be444a04
+      - DRONE_GITEA_CLIENT_SECRET=gto_aqtd4a34fbltm6k43y3juu2sj2ciloun6nd4cwswhvo2prx4zupq
+      - DRONE_USER_CREATE=username:admin,admin:true
+      - DRONE_RPC_SECRET=6fff62813ae797bd510e6dbab6bceae7e65b70d27454383cd36d5d53a3f05ba5
+      - DRONE_SERVER_PROTO=https
+      - DRONE_SERVER_HOST=drone.dev.local
+      - DRONE_GITEA_SKIP_VERIFY=true
+    volumes:
+      - drone:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8080:80"
+    depends_on:
+      - dronedb
+      - gitea
+    networks:
+      - frontend
+      - backend
+
+  dronedb:
+    image: docker.io/library/postgres:14
+    restart: always
+    environment:
+      - POSTGRES_USER=drone
+      - POSTGRES_PASSWORD=drone
+      - POSTGRES_DB=drone
+      - PGPORT=7432
+    volumes:
+      - dronepostgres:/var/lib/postgresql/data
+    networks:
+      - backend
