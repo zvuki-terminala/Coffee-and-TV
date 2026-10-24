@@ -53,8 +53,7 @@ service:
 
   ssh:
     type: LoadBalancer
-    port: 22
-    nodePort: 30022
+    port: 2222
     clusterIP: ""
     loadBalancerIP:
     externalTrafficPolicy:
@@ -183,8 +182,8 @@ gitea:
       ROOT_URL: https://git.dev.local/
       PROTOCOL: http
       HTTP_PORT: 3000
-      SSH_LISTEN_PORT: 22
-      SSH_PORT: 30022
+      SSH_LISTEN_PORT: 2222
+      SSH_PORT: 2222
     database:
       DB_TYPE: postgres
       HOST: gitea-postgresql:5432

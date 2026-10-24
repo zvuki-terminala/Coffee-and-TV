@@ -1,9 +1,0 @@
-Windows Terminal
-Powertoys
-WSL2 networking mode mirrored
-mkcert on Windows and WSL2
-
-Docker Desktop
-Kubernetes
-Ingress
-helm kubectl
